@@ -4,11 +4,51 @@ from app.main import create_app
 
 def test_health(migrated_db):
     client = TestClient(create_app(migrated_db))
-    assert client.get('/health').json() == {'status': 'ok'}
+    response = client.get('/health')
+    assert response.status_code == 200
+    assert response.json() == {'status': 'ok'}
 
 
-def test_products(migrated_db):
+def test_list_products_contains_unit(migrated_db):
     client = TestClient(create_app(migrated_db))
     response = client.get('/products')
     assert response.status_code == 200
-    assert len(response.json()) == 2
+    rows = response.json()
+    assert len(rows) == 2
+    assert all(row['unit'] for row in rows)
+    assert rows[0]['unit'] == 'мешок'
+    assert rows[1]['unit'] == 'м³'
+
+
+def test_filter_cement_unit(migrated_db):
+    client = TestClient(create_app(migrated_db))
+    response = client.get('/products', params={'unit': 'мешок'})
+    assert response.status_code == 200
+    assert [product['sku'] for product in response.json()] == ['CEMENT-M500']
+
+
+def test_filter_unknown_unit(migrated_db):
+    client = TestClient(create_app(migrated_db))
+    response = client.get('/products', params={'unit': 'khong-ton-tai'})
+    assert response.status_code == 200
+    assert response.json() == []
+
+
+def test_get_product(migrated_db):
+    client = TestClient(create_app(migrated_db))
+    response = client.get('/products/2')
+    assert response.status_code == 200
+    assert response.json()['unit'] == 'м³'
+
+
+def test_missing_product(migrated_db):
+    client = TestClient(create_app(migrated_db))
+    response = client.get('/products/999')
+    assert response.status_code == 404
+
+
+def test_missing_database(tmp_path):
+    client = TestClient(create_app(tmp_path / 'missing.db'))
+    response = client.get('/products')
+    assert response.status_code == 503
+    assert client.get('/products/1').status_code == 503
