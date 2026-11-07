@@ -52,3 +52,17 @@ def test_missing_database(tmp_path):
     response = client.get('/products')
     assert response.status_code == 503
     assert client.get('/products/1').status_code == 503
+
+
+def test_invalid_stored_unit_is_detected(migrated_db):
+    import sqlite3
+    from contextlib import closing
+
+    with closing(sqlite3.connect(migrated_db)) as conn:
+        conn.execute(
+            "INSERT INTO products(id, sku, name, price_rub, unit) VALUES(3, 'INVALID', 'Bad', 2, 'liter')"
+        )
+        conn.commit()
+    client = TestClient(create_app(migrated_db))
+    assert client.get('/products').status_code == 500
+    assert client.get('/products/3').status_code == 500

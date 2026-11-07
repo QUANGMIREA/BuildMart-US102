@@ -4,6 +4,7 @@ import sqlite3
 from contextlib import closing
 from pathlib import Path
 from fastapi import FastAPI, HTTPException
+from app.catalog import is_valid_unit
 
 
 def create_app(db_path: str | Path | None = None) -> FastAPI:
@@ -29,7 +30,10 @@ def create_app(db_path: str | Path | None = None) -> FastAPI:
                     'SELECT id, sku, name, price_rub, unit FROM products WHERE unit = ? ORDER BY id',
                     (unit,)
                 ).fetchall()
-        return [dict(row) for row in rows]
+        products = [dict(row) for row in rows]
+        if any(not is_valid_unit(product['unit']) for product in products):
+            raise HTTPException(status_code=500, detail='Invalid product unit in database')
+        return products
 
     @api.get('/products/{product_id}')
     def get_product(product_id: int):
@@ -43,7 +47,10 @@ def create_app(db_path: str | Path | None = None) -> FastAPI:
             ).fetchone()
         if row is None:
             raise HTTPException(status_code=404, detail='Product not found')
-        return dict(row)
+        product = dict(row)
+        if not is_valid_unit(product['unit']):
+            raise HTTPException(status_code=500, detail='Invalid product unit in database')
+        return product
 
     return api
 
