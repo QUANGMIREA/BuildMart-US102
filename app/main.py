@@ -1,6 +1,7 @@
 """BuildMart catalog API after US-102, backed by versioned SQLite data."""
 import os
 import sqlite3
+from contextlib import closing
 from pathlib import Path
 from fastapi import FastAPI, HTTPException
 
@@ -17,7 +18,7 @@ def create_app(db_path: str | Path | None = None) -> FastAPI:
     def get_products(unit: str | None = None):
         if not path.is_file():
             raise HTTPException(status_code=503, detail='Database is not initialized')
-        with sqlite3.connect(path) as conn:
+        with closing(sqlite3.connect(path)) as conn:
             conn.row_factory = sqlite3.Row
             if unit is None:
                 rows = conn.execute(
@@ -34,7 +35,7 @@ def create_app(db_path: str | Path | None = None) -> FastAPI:
     def get_product(product_id: int):
         if not path.is_file():
             raise HTTPException(status_code=503, detail='Database is not initialized')
-        with sqlite3.connect(path) as conn:
+        with closing(sqlite3.connect(path)) as conn:
             conn.row_factory = sqlite3.Row
             row = conn.execute(
                 'SELECT id, sku, name, price_rub, unit FROM products WHERE id = ?',

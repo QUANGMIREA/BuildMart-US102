@@ -11,7 +11,7 @@ Create the real Azure DevOps User Story and link it to your Pull Request.
 ```bash
 python -m venv .venv
 # Linux/macOS: source .venv/bin/activate
-# Windows PowerShell: .venv\\Scripts\\Activate.ps1
+# Windows PowerShell: .venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
 python -m scripts.migrate
 python -m pytest -q --cov=app --cov-report=term-missing --cov-fail-under=80

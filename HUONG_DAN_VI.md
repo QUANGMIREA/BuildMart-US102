@@ -30,7 +30,7 @@
 
 ## 3. Chạy mã locally
 
-Giải nén project, **mở thư mục có `.git`**. Bắt đầu trên nhánh feature:
+Giải nén project, **mở thư mục có `.git`**. Bắt đầu trên nhánh feature. Trước khi tự tạo commit, cấu hình `git config user.name "Ten cua ban"` và `git config user.email "email@example.com"`:
 
 ```bash
 git branch -a
@@ -38,7 +38,7 @@ python -m venv .venv
 # Linux/macOS:
 source .venv/bin/activate
 # Windows PowerShell:
-# .venv\\Scripts\\Activate.ps1
+# .venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
 python -m scripts.migrate
 python -m pytest -q --junitxml=test-results.xml --cov=app --cov-report=term-missing --cov-report=xml --cov-fail-under=80

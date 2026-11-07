@@ -8,6 +8,7 @@ import argparse
 import os
 import re
 import sqlite3
+from contextlib import closing
 from pathlib import Path
 
 MIGRATIONS = Path(__file__).resolve().parents[1] / 'database' / 'migrations'
@@ -19,7 +20,7 @@ def run_migrations(db_path: Path | str, target: str | None = None) -> list[str]:
     scripts = sorted(MIGRATIONS.glob('V[0-9]*__*.sql'))
     if target is not None and target not in {f.name.split('__')[0] for f in scripts}:
         raise ValueError(f'Unknown target migration: {target}')
-    with sqlite3.connect(db_path) as connection:
+    with closing(sqlite3.connect(db_path)) as connection:
         connection.execute("""CREATE TABLE IF NOT EXISTS schema_migrations (
             version TEXT PRIMARY KEY,
             filename TEXT NOT NULL,
