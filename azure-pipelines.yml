@@ -1,0 +1,48 @@
+# Azure Repos PR build validation is configured in Branch Policies, not YAML pr:.
+trigger:
+  branches:
+    include:
+      - main
+      - develop
+      - feature/*
+      - release/*
+      - hotfix/*
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+steps:
+  - checkout: self
+  - task: UsePythonVersion@0
+    displayName: 'Use Python 3.12'
+    inputs:
+      versionSpec: '3.12'
+  - script: |
+      python -m pip install --upgrade pip
+      python -m pip install -r requirements.txt
+    displayName: 'Install dependencies'
+  - script: |
+      python -m pytest -q \
+        --junitxml=test-results.xml \
+        --cov=app \
+        --cov-report=term-missing \
+        --cov-report=xml \
+        --cov-fail-under=80
+    displayName: 'Automated tests (coverage >= 80%)'
+  - task: PublishTestResults@2
+    condition: succeededOrFailed()
+    inputs:
+      testResultsFormat: 'JUnit'
+      testResultsFiles: 'test-results.xml'
+      failTaskOnFailedTests: true
+      testRunTitle: 'BuildMart automated tests'
+  - script: |
+      docker build -t buildmart:$(Build.BuildId) .
+      mkdir -p dist
+      docker save buildmart:$(Build.BuildId) -o dist/buildmart.tar
+    displayName: 'Build container and package release artifact'
+  - task: PublishPipelineArtifact@1
+    inputs:
+      targetPath: 'dist'
+      artifact: 'buildmart-image'
+    displayName: 'Publish deployable artifact'
